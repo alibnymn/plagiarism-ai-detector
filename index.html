@@ -761,67 +761,134 @@
             };
         }
 
+        // function analyzeAiContent(mainText) {
+        //     const sentences = getSentences(mainText);
+        //     const words = tokenize(mainText);
+
+        //     if (words.length < 10) {
+        //         return {
+        //             aiScore: 0,
+        //             burstiness: 0,
+        //             ttr: 0,
+        //             aiPhraseCount: 0,
+        //             aiSentences: []
+        //         };
+        //     }
+
+        //     const sentenceLengths = sentences.map(s => tokenize(s).length).filter(l => l > 0);
+        //     const meanLength = sentenceLengths.reduce((a, b) => a + b, 0) / (sentenceLengths.length || 1);
+        //     const variance = sentenceLengths.reduce((acc, len) => acc + Math.pow(len - meanLength, 2), 0) / (sentenceLengths.length || 1);
+        //     const stdDev = Math.sqrt(variance);
+        //     const burstinessScore = meanLength > 0 ? (stdDev / meanLength) : 0;
+
+        //     const uniqueWords = new Set(words);
+        //     const ttr = uniqueWords.size / words.length;
+
+        //     const lowerText = mainText.toLowerCase();
+        //     let aiPhraseCount = 0;
+        //     AI_PHRASES.forEach(phrase => {
+        //         const regex = new RegExp(phrase, 'g');
+        //         const matches = lowerText.match(regex);
+        //         if (matches) aiPhraseCount += matches.length;
+        //     });
+
+        //     let aiProbability = 0;
+        //     if (burstinessScore < 0.3) aiProbability += 40;
+        //     else if (burstinessScore < 0.5) aiProbability += 20;
+
+        //     const phraseDensity = (aiPhraseCount / (words.length / 100));
+        //     if (phraseDensity > 2.5) aiProbability += 35;
+        //     else if (phraseDensity > 1) aiProbability += 20;
+
+        //     if (ttr > 0.45 && ttr < 0.65) aiProbability += 15;
+
+        //     const aiSentences = [];
+        //     sentences.forEach((sent, idx) => {
+        //         const sentLower = sent.toLowerCase();
+        //         let hasAiPhrase = AI_PHRASES.some(p => sentLower.includes(p));
+        //         const length = tokenize(sent).length;
+        //         const lengthDiff = Math.abs(length - meanLength);
+        //         if (hasAiPhrase || (lengthDiff < 2 && burstinessScore < 0.4)) {
+        //             aiSentences.push(idx);
+        //         }
+        //     });
+
+        //     const finalAiScore = Math.min(98, Math.max(2, Math.round(aiProbability)));
+
+        //     return {
+        //         aiScore: finalAiScore,
+        //         burstiness: roundToOneDec(burstinessScore),
+        //         ttr: Math.round(ttr * 100),
+        //         aiPhraseCount,
+        //         aiSentences
+        //     };
+        // }
         function analyzeAiContent(mainText) {
-            const sentences = getSentences(mainText);
-            const words = tokenize(mainText);
+           const sentences = getSentences(mainText);
+           const words = tokenize(mainText);
 
-            if (words.length < 10) {
-                return {
-                    aiScore: 0,
-                    burstiness: 0,
-                    ttr: 0,
-                    aiPhraseCount: 0,
-                    aiSentences: []
-                };
+           if (words.length < 15) {
+              return { aiScore: 0, burstiness: 0, ttr: 0, aiPhraseCount: 0, aiSentences: [] };
+           }
+
+           // 1. Burstiness (Variasi Panjang Kalimat)
+           const sentenceLengths = sentences.map(s => tokenize(s).length).filter(l => l > 0);
+           const meanLength = sentenceLengths.reduce((a, b) => a + b, 0) / (sentenceLengths.length || 1);
+           const variance = sentenceLengths.reduce((acc, len) => acc + Math.pow(len - meanLength, 2), 0) / (sentenceLengths.length || 1);
+           const stdDev = Math.sqrt(variance);
+           const burstinessScore = meanLength > 0 ? (stdDev / meanLength) : 0;
+
+           // 2. TTR (Keberagaman Kosakata)
+           const uniqueWords = new Set(words);
+           const ttr = uniqueWords.size / words.length;
+
+          // 3. Frasa Spesifik AI
+          const lowerText = mainText.toLowerCase();
+          let aiPhraseCount = 0;
+          AI_PHRASES.forEach(phrase => {
+            const regex = new RegExp('\\b' + phrase + '\\b', 'g');
+            const matches = lowerText.match(regex);
+            if (matches) aiPhraseCount += matches.length;
+         });
+
+         // 4. Kalibrasi Ulang Bobot Skor (Lebih Ketat agar Manusia Tidak Kena False-Positive)
+         let aiProbability = 0;
+
+         // Hanya beri poin AI jika variasi kalimat benar-benar sangat kaku (< 0.2)
+         if (burstinessScore < 0.2) aiProbability += 30;
+         else if (burstinessScore < 0.35) aiProbability += 10;
+
+         // Bobot utama dititikberatkan pada keberadaan frasa generik khas AI
+         const phraseDensity = (aiPhraseCount / (words.length / 100)); // Per 100 kata
+         if (phraseDensity > 3.0) aiProbability += 50;
+         else if (phraseDensity > 1.5) aiProbability += 30;
+         else if (phraseDensity > 0.5) aiProbability += 15;
+
+         // TTR manusia biasanya sangat bervariasi (terlalu tinggi / terlalu rendah), AI cenderung di tengah (0.50 - 0.60)
+         if (ttr >= 0.50 && ttr <= 0.60 && aiPhraseCount > 0) aiProbability += 15;
+
+         // Jika variasi panjang kalimat tinggi (khas manusia), kurangi skor AI
+         if (burstinessScore > 0.6) aiProbability -= 20;
+
+         const finalAiScore = Math.min(98, Math.max(0, Math.round(aiProbability)));
+
+         // Tentukan kalimat spesifik mana yang dicurigai AI
+         const aiSentences = [];
+         sentences.forEach((sent, idx) => {
+            const sentLower = sent.toLowerCase();
+            let hasAiPhrase = AI_PHRASES.some(p => sentLower.includes(p));
+            if (hasAiPhrase) {
+                aiSentences.push(idx);
             }
+         });
 
-            const sentenceLengths = sentences.map(s => tokenize(s).length).filter(l => l > 0);
-            const meanLength = sentenceLengths.reduce((a, b) => a + b, 0) / (sentenceLengths.length || 1);
-            const variance = sentenceLengths.reduce((acc, len) => acc + Math.pow(len - meanLength, 2), 0) / (sentenceLengths.length || 1);
-            const stdDev = Math.sqrt(variance);
-            const burstinessScore = meanLength > 0 ? (stdDev / meanLength) : 0;
-
-            const uniqueWords = new Set(words);
-            const ttr = uniqueWords.size / words.length;
-
-            const lowerText = mainText.toLowerCase();
-            let aiPhraseCount = 0;
-            AI_PHRASES.forEach(phrase => {
-                const regex = new RegExp(phrase, 'g');
-                const matches = lowerText.match(regex);
-                if (matches) aiPhraseCount += matches.length;
-            });
-
-            let aiProbability = 0;
-            if (burstinessScore < 0.3) aiProbability += 40;
-            else if (burstinessScore < 0.5) aiProbability += 20;
-
-            const phraseDensity = (aiPhraseCount / (words.length / 100));
-            if (phraseDensity > 2.5) aiProbability += 35;
-            else if (phraseDensity > 1) aiProbability += 20;
-
-            if (ttr > 0.45 && ttr < 0.65) aiProbability += 15;
-
-            const aiSentences = [];
-            sentences.forEach((sent, idx) => {
-                const sentLower = sent.toLowerCase();
-                let hasAiPhrase = AI_PHRASES.some(p => sentLower.includes(p));
-                const length = tokenize(sent).length;
-                const lengthDiff = Math.abs(length - meanLength);
-                if (hasAiPhrase || (lengthDiff < 2 && burstinessScore < 0.4)) {
-                    aiSentences.push(idx);
-                }
-            });
-
-            const finalAiScore = Math.min(98, Math.max(2, Math.round(aiProbability)));
-
-            return {
-                aiScore: finalAiScore,
-                burstiness: roundToOneDec(burstinessScore),
-                ttr: Math.round(ttr * 100),
-                aiPhraseCount,
-                aiSentences
-            };
+         return {
+           aiScore: finalAiScore,
+           burstiness: roundToOneDec(burstinessScore),
+           ttr: Math.round(ttr * 100),
+           aiPhraseCount,
+           aiSentences
+         };
         }
 
         function roundToOneDec(num) {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plagiarist & AI Content Detector - Interactive Web App</title>
+    <title>Alibnymn Checker - Interactive Web App</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -31,6 +31,10 @@
     </script>
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PDF.js Library (Buat Baca PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Mammoth.js Library (Buat Baca Word .docx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -86,14 +90,14 @@
     <header class="sticky top-0 z-50 glass-panel border-b border-gray-800/60 px-4 lg:px-8 py-3.5">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-gradient-to-tr from-brand-600 to-indigo-500 rounded-xl shadow-lg shadow-brand-500/20">
-                    <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+                <!-- Logo Avatar / Inisial Alibnymn -->
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white font-bold text-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    A
                 </div>
+                <!-- Nama Branding & Subtitle -->
                 <div>
-                    <h1 class="font-bold text-lg leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
-                        CheckText AI & Plagiarism
-                    </h1>
-                    <p class="text-xs text-gray-400">Pemeriksa Kemiripan Teks & Deteksi Konten AI</p>
+                    <h1 class="text-xl font-bold text-white tracking-wide">Alibnymn <span class="text-indigo-400 font-normal">Checker</span></h1>
+                    <p class="text-xs text-slate-400">Pemeriksa Kemiripan Teks & Deteksi Konten AI</p>
                 </div>
             </div>
 
@@ -120,33 +124,42 @@
                 
                 <!-- Main Input Text Area -->
                 <div class="glass-panel rounded-2xl p-5 shadow-xl flex flex-col gap-3 border border-gray-800/80">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
                         <label for="mainText" class="text-sm font-semibold text-gray-200 flex items-center gap-2">
                             <i data-lucide="file-text" class="w-4 h-4 text-brand-500"></i>
                             Teks Utama Yang Ingin Diperiksa
                         </label>
+                        
+                        <!-- Tombol Upload File Teks Utama -->
+                        <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 font-medium">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                            Upload PDF / Word / TXT
+                            <input type="file" id="mainFileInput" accept=".txt,.pdf,.docx,.md" class="hidden">
+                        </label>
+                    </div>
+
+                    <div class="relative">
+                        <textarea id="mainText" rows="11" 
+                            placeholder="Tempelkan teks atau upload file PDF/Word di atas untuk menganalisis kemiripan plagiarisme dan pola AI..."
+                            class="w-full bg-gray-950/60 border border-gray-800 rounded-xl p-4 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition custom-scrollbar resize-y"></textarea>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
                         <div class="flex items-center gap-3 text-xs text-gray-400">
                             <span id="charCount">0 karakter</span>
                             <span>•</span>
                             <span id="wordCount">0 kata</span>
                         </div>
-                    </div>
-
-                    <div class="relative">
-                        <textarea id="mainText" rows="11" 
-                            placeholder="Tempelkan atau ketik teks tulisan kamu di sini untuk menganalisis kemiripan plagiarisme dan pola AI... (minimal 15 kata untuk analisis optimal)"
-                            class="w-full bg-gray-950/60 border border-gray-800 rounded-xl p-4 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition custom-scrollbar resize-y"></textarea>
-                    </div>
-
-                    <div class="flex items-center justify-between pt-1">
-                        <button id="clearMainTextBtn" class="text-xs text-gray-400 hover:text-red-400 transition flex items-center gap-1">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            Kosongkan Teks
-                        </button>
-                        <button id="sampleTextBtn" class="text-xs text-brand-500 hover:text-brand-400 transition flex items-center gap-1">
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                            Isi Contoh Teks AI/Plagiat
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <button id="clearMainTextBtn" class="text-xs text-gray-400 hover:text-red-400 transition flex items-center gap-1">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                Kosongkan Teks
+                            </button>
+                            <button id="sampleTextBtn" class="text-xs text-brand-500 hover:text-brand-400 transition flex items-center gap-1">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                Isi Contoh Teks
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -168,7 +181,7 @@
                             Input Manual / Koleksi
                         </button>
                         <button id="tabUploadBtn" class="flex-1 py-2 rounded-lg text-center transition text-gray-400 hover:text-gray-200">
-                            Upload File (.txt, .md, .json)
+                            Upload File (.pdf, .docx, .txt, .md)
                         </button>
                     </div>
 
@@ -191,8 +204,8 @@
                         <div class="border-2 border-dashed border-gray-800 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-brand-500/50 transition cursor-pointer bg-gray-950/30" id="dropZone">
                             <i data-lucide="upload-cloud" class="w-8 h-8 text-gray-400 mb-2"></i>
                             <p class="text-xs font-medium text-gray-300 mb-1">Klik atau seret file referensi ke sini</p>
-                            <p class="text-[11px] text-gray-500">Mendukung file .txt, .md, .json (Bisa pilih banyak file)</p>
-                            <input type="file" id="fileInput" multiple accept=".txt,.md,.json" class="hidden">
+                            <p class="text-[11px] text-gray-500">Mendukung file .pdf, .docx, .txt, .md, .json (Bisa banyak file)</p>
+                            <input type="file" id="fileInput" multiple accept=".txt,.md,.json,.pdf,.docx" class="hidden">
                         </div>
                     </div>
                 </div>
@@ -360,16 +373,21 @@
     <!-- Footer -->
     <footer class="border-t border-gray-800/60 py-4 px-4 text-center text-xs text-gray-500">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
-            <p>&copy; 2026 CheckText AI - Plagiarism & AI Detector Tool. Client-side Processing.</p>
-            <p class="text-gray-600">Dikembangkan dengan TF-IDF Vectorizer & Heuristik Syntactic Variance</p>
+            <p>&copy; 2026 Alibnymn Checker - Plagiarism & AI Detector Tool. Client-side Processing.</p>
+            <p class="text-gray-600">Dikembangkan dengan TF-IDF Vectorizer & Syntactic Variance</p>
         </div>
     </footer>
 
     <!-- JS Logic -->
     <script>
-        // Sample Texts for Demonstration
+        // PDF.js Worker Init
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // Sample Texts
         const SAMPLE_TEXTS = {
-            ai: `Penting untuk dicatat bahwa kecerdasan buatan telah mengalami perkembangan yang sangat pesat dalam beberapa tahun terakhir. Selain itu, penggunaan teknologi ini memberikan efisiensi yang signifikan di berbagai sektor industri. Oleh karena itu, dapat disimpulkan bahwa integrasi AI menjadi sebuah keniscayaan dalam transformasi digital modern. Lebih lanjut, penting bagi kita untuk terus mengevaluasi dampak sosial dari penerapan otomatisasi tersebut.`,
+            ai: `Penting untuk dicatat bahwa kecerdasan buatan telah mengalami perkembangan yang sangat pesat dalam beberapa tahun terakhir. Selain itu, penggunaan teknologi ini memberikan efisiensi yang signifikan di berbagai sektor industri. Oleh karena itu, dapat disimpulkan bahwa integrasi AI menjadi sebuah keniscayaan dalam transformasi digital modern.`,
             plagiarist: `Kecerdasan buatan bertugas memastikan proses analisis data berjalan dengan cepat sebelum digunakan untuk membuat keputusan strategi bisnis. Menggunakan machine learning untuk otomatisasi sangat efektif memangkas waktu pengerjaan. Hasil eksekusi model dapat di-export secara otomatis menjadi laporan analisis yang komprehensif.`
         };
 
@@ -382,7 +400,6 @@
             }
         ];
 
-        // AI Typical Markers
         const AI_PHRASES = [
             'penting untuk dicatat bahwa', 'selain itu', 'oleh karena itu', 'dapat disimpulkan bahwa',
             'lebih lanjut', 'pada akhirnya', 'secara umum', 'tidak dapat dipungkiri bahwa',
@@ -393,6 +410,7 @@
 
         // DOM Elements
         const mainTextEl = document.getElementById('mainText');
+        const mainFileInput = document.getElementById('mainFileInput');
         const charCountEl = document.getElementById('charCount');
         const wordCountEl = document.getElementById('wordCount');
         const refListContainer = document.getElementById('refListContainer');
@@ -437,14 +455,12 @@
 
         let lastAnalysisResult = null;
 
-        // Initialize Lucide Icons
         window.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             renderRefList();
             updateCounters();
         });
 
-        // Event Listeners for Input Counters
         mainTextEl.addEventListener('input', updateCounters);
 
         function updateCounters() {
@@ -454,7 +470,49 @@
             wordCountEl.textContent = `${words} kata`;
         }
 
-        // Tab Switching Logic
+        // Helper Extractor untuk PDF, DOCX, & Plain Text
+        async function extractTextFromFile(file) {
+            const extension = file.name.split('.').pop().toLowerCase();
+            
+            if (extension === 'pdf') {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    fullText += textContent.items.map(item => item.str).join(' ') + '\n\n';
+                }
+                return fullText;
+            } 
+            else if (extension === 'docx') {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer });
+                return result.value;
+            } 
+            else {
+                return await file.text();
+            }
+        }
+
+        // Upload File ke Main Text Area
+        mainFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                mainTextEl.value = "Memproses dan membaca file...";
+                const extractedText = await extractTextFromFile(file);
+                mainTextEl.value = extractedText;
+                updateCounters();
+            } catch (err) {
+                alert("Gagal membaca file: " + err.message);
+                mainTextEl.value = "";
+                updateCounters();
+            }
+        });
+
+        // Tabs Toggle
         tabManualBtn.addEventListener('click', () => {
             tabManualBtn.classList.add('bg-brand-600', 'text-white', 'shadow');
             tabManualBtn.classList.remove('text-gray-400');
@@ -479,7 +537,7 @@
             tabManualContent.classList.remove('flex');
         });
 
-        // Reference Document Management
+        // Render Pustaka Referensi
         function renderRefList() {
             refListContainer.innerHTML = '';
             refDocCountBadge.textContent = `${referenceDocs.length} Dokumen`;
@@ -489,7 +547,7 @@
                 return;
             }
 
-            referenceDocs.forEach((doc, idx) => {
+            referenceDocs.forEach((doc) => {
                 const item = document.createElement('div');
                 item.className = 'bg-gray-950/60 border border-gray-800/80 rounded-xl p-3 flex items-start justify-between gap-3 text-xs';
                 item.innerHTML = `
@@ -525,7 +583,7 @@
             renderRefList();
         });
 
-        // File Upload Handling
+        // Drag & Drop / Multiple Upload File ke Pustaka Referensi
         dropZone.addEventListener('click', () => fileInput.click());
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -543,19 +601,20 @@
             handleFiles(e.target.files);
         });
 
-        function handleFiles(files) {
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
+        async function handleFiles(files) {
+            for (const file of Array.from(files)) {
+                try {
+                    const text = await extractTextFromFile(file);
                     referenceDocs.push({
                         id: 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
                         title: file.name,
-                        content: event.target.result
+                        content: text
                     });
-                    renderRefList();
-                };
-                reader.readAsText(file);
-            });
+                } catch (err) {
+                    alert(`Gagal mengekstrak file ${file.name}: ${err.message}`);
+                }
+            }
+            renderRefList();
         }
 
         // Quick Controls
@@ -578,9 +637,7 @@
             resultsPanel.classList.remove('flex');
         });
 
-        // --- CORE ALGORITHMS & ENGINES ---
-
-        // Helper Tokenizer & Stemmer/Cleaner
+        // --- ENGINES & ALGORITHMS ---
         function tokenize(text) {
             return text.toLowerCase()
                 .replace(/[^\w\s\u00C0-\u024F]/g, ' ')
@@ -594,7 +651,6 @@
                 .filter(s => s.length > 5);
         }
 
-        // N-gram generator
         function getNgrams(tokens, n = 3) {
             const ngrams = [];
             for (let i = 0; i <= tokens.length - n; i++) {
@@ -603,7 +659,6 @@
             return ngrams;
         }
 
-        // Jaccard Similarity for N-grams
         function calculateJaccard(ngramsA, ngramsB) {
             if (!ngramsA.length || !ngramsB.length) return 0;
             const setA = new Set(ngramsA);
@@ -616,7 +671,6 @@
             return union === 0 ? 0 : intersection / union;
         }
 
-        // Cosine Similarity via TF-IDF Vectorizer
         function calculateTfidfCosine(docA, docB) {
             const tokensA = tokenize(docA);
             const tokensB = tokenize(docB);
@@ -625,7 +679,6 @@
             const vocabulary = Array.from(new Set([...tokensA, ...tokensB]));
             const docs = [tokensA, tokensB];
 
-            // Term Frequency (TF)
             const tf = docs.map(doc => {
                 const freq = {};
                 doc.forEach(word => freq[word] = (freq[word] || 0) + 1);
@@ -633,18 +686,15 @@
                 return freq;
             });
 
-            // Inverse Document Frequency (IDF)
             const idf = {};
             vocabulary.forEach(word => {
                 const docCount = docs.filter(doc => doc.includes(word)).length;
                 idf[word] = Math.log(1 + (docs.length / (docCount || 1)));
             });
 
-            // TF-IDF Vectors
             const vecA = vocabulary.map(word => tf[0][word] * idf[word]);
             const vecB = vocabulary.map(word => tf[1][word] * idf[word]);
 
-            // Cosine Calculation
             let dotProduct = 0;
             let normA = 0;
             let normB = 0;
@@ -657,7 +707,6 @@
             return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
         }
 
-        // --- PLAGIARISM CHECKER ENGINE ---
         function analyzePlagiarism(mainText, refDocs) {
             if (!mainText.trim() || refDocs.length === 0) {
                 return { overallScore: 0, sources: [], sentenceMatches: [] };
@@ -680,7 +729,6 @@
                     score: Math.min(100, Math.round(blendedScore * 100))
                 });
 
-                // Sentence level breakdown matching
                 const refSentences = getSentences(doc.content);
                 mainSentences.forEach((mSent, mIdx) => {
                     const mTokens = tokenize(mSent);
@@ -713,7 +761,6 @@
             };
         }
 
-        // --- AI DETECTOR HEURISTICS ENGINE ---
         function analyzeAiContent(mainText) {
             const sentences = getSentences(mainText);
             const words = tokenize(mainText);
@@ -728,19 +775,15 @@
                 };
             }
 
-            // 1. Burstiness (Variance of Sentence Lengths)
             const sentenceLengths = sentences.map(s => tokenize(s).length).filter(l => l > 0);
             const meanLength = sentenceLengths.reduce((a, b) => a + b, 0) / (sentenceLengths.length || 1);
             const variance = sentenceLengths.reduce((acc, len) => acc + Math.pow(len - meanLength, 2), 0) / (sentenceLengths.length || 1);
             const stdDev = Math.sqrt(variance);
-            // AI tends to have low burstiness (uniform sentence lengths)
             const burstinessScore = meanLength > 0 ? (stdDev / meanLength) : 0;
 
-            // 2. Type-Token Ratio (TTR - Lexical Diversity)
             const uniqueWords = new Set(words);
             const ttr = uniqueWords.size / words.length;
 
-            // 3. AI Transition Phrases Density
             const lowerText = mainText.toLowerCase();
             let aiPhraseCount = 0;
             AI_PHRASES.forEach(phrase => {
@@ -749,30 +792,21 @@
                 if (matches) aiPhraseCount += matches.length;
             });
 
-            // 4. Perplexity / Uniformity Heuristic Score Calculation
-            // Low burstiness + Moderate TTR + High AI transition phrases = High AI probability
             let aiProbability = 0;
-
-            // Burstiness factor: Low variance increases AI probability
             if (burstinessScore < 0.3) aiProbability += 40;
             else if (burstinessScore < 0.5) aiProbability += 20;
 
-            // AI Transition Phrases factor
-            const phraseDensity = (aiPhraseCount / (words.length / 100)); // Per 100 words
+            const phraseDensity = (aiPhraseCount / (words.length / 100));
             if (phraseDensity > 2.5) aiProbability += 35;
             else if (phraseDensity > 1) aiProbability += 20;
 
-            // TTR Factor (AI often uses a controlled vocabulary range ~0.45 - 0.65 for medium texts)
             if (ttr > 0.45 && ttr < 0.65) aiProbability += 15;
 
-            // Sentence-level AI probability evaluation
             const aiSentences = [];
             sentences.forEach((sent, idx) => {
                 const sentLower = sent.toLowerCase();
                 let hasAiPhrase = AI_PHRASES.some(p => sentLower.includes(p));
                 const length = tokenize(sent).length;
-                
-                // If length is very close to mean length and has transition phrase
                 const lengthDiff = Math.abs(length - meanLength);
                 if (hasAiPhrase || (lengthDiff < 2 && burstinessScore < 0.4)) {
                     aiSentences.push(idx);
@@ -798,7 +832,7 @@
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        // --- MAIN ANALYSIS EXECUTION ---
+        // Exec Analysis
         analyzeBtn.addEventListener('click', () => {
             const mainText = mainTextEl.value.trim();
             if (!mainText) {
@@ -811,7 +845,6 @@
                 return;
             }
 
-            // Show Processing Loading State
             analyzeBtn.disabled = true;
             analyzeBtn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Menganalisis Teks...`;
             lucide.createIcons();
@@ -829,21 +862,18 @@
 
                 displayResults(plagResult, aiResult, mainText);
 
-                // Restore Button State
                 analyzeBtn.disabled = false;
                 analyzeBtn.innerHTML = `<i data-lucide="cpu" class="w-5 h-5"></i> Jalankan Analisis Plagiarisme & AI`;
                 lucide.createIcons();
             }, 400);
         });
 
-        // Display Results Dashboard
         function displayResults(plag, ai, rawText) {
             emptyResultsState.classList.add('hidden');
             emptyResultsState.classList.remove('flex');
             resultsPanel.classList.remove('hidden');
             resultsPanel.classList.add('flex');
 
-            // 1. Plagiarism Score Display
             plagScoreText.textContent = `${plag.overallScore}%`;
             plagRing.setAttribute('stroke-dasharray', `${plag.overallScore}, 100`);
 
@@ -858,7 +888,6 @@
                 plagStatusBadge.textContent = "Unik (Aman)";
             }
 
-            // 2. AI Score Display
             aiScoreText.textContent = `${ai.aiScore}%`;
             aiRing.setAttribute('stroke-dasharray', `${ai.aiScore}, 100`);
 
@@ -873,7 +902,6 @@
                 aiStatusBadge.textContent = "Penulisan Manusia";
             }
 
-            // 3. AI Heuristics Breakdown Bars
             burstinessVal.textContent = ai.burstiness;
             burstinessBar.style.width = `${Math.min(100, (ai.burstiness / 1.2) * 100)}%`;
 
@@ -881,9 +909,8 @@
             ttrBar.style.width = `${ai.ttr}%`;
 
             aiPhrasesVal.textContent = `${ai.aiPhraseCount} frasa`;
-            aiPhrasesBar.style.width = `${Math.min(100, ai.aiPhraseCount * 25)}%`;
+            aiPhrasesBar.style.width = `${Math.min(100, (ai.aiPhraseCount / 5) * 100)}%`;
 
-            // 4. Source Matches List
             sourcesMatchList.innerHTML = '';
             if (plag.sources.length === 0) {
                 sourcesMatchList.innerHTML = `<p class="text-gray-500 text-center py-2">Tidak ada kemiripan signifikan dengan pustaka referensi.</p>`;
@@ -899,7 +926,6 @@
                 });
             }
 
-            // 5. Highlight Viewer Render
             const sentences = getSentences(rawText);
             let highlightedHTML = '';
 
@@ -924,12 +950,11 @@
             highlightedTextViewer.innerHTML = highlightedHTML || escapeHtml(rawText);
         }
 
-        // --- EXPORT FEATURES ---
+        // Export Actions
         copyReportBtn.addEventListener('click', () => {
             if (!lastAnalysisResult) return;
             const reportText = generateReportText(lastAnalysisResult);
             
-            // Clipboard Copy Fallback
             const textarea = document.createElement('textarea');
             textarea.value = reportText;
             document.body.appendChild(textarea);
@@ -961,19 +986,19 @@ Waktu Analisis: ${data.timestamp}
 ================================================
 
 [ RINGKASAN HASIL ]
-• Tingkat Plagiarisme : ${data.plagiarism.overallScore}%
-• Prediksi AI Generated: ${data.ai.aiScore}%
+- Tingkat Plagiarisme : ${data.plagiarism.overallScore}%
+- Prediksi AI Generated: ${data.ai.aiScore}%
 
 [ INDIKATOR HEURISTIK AI ]
-• Variasi Panjang Kalimat (Burstiness) : ${data.ai.burstiness}
-• Keberagaman Kosakata (TTR)          : ${data.ai.ttr}%
-• Jumlah Frasa Tipikal AI              : ${data.ai.aiPhraseCount}
+- Variasi Panjang Kalimat (Burstiness) : ${data.ai.burstiness}
+- Keberagaman Kosakata (TTR)          : ${data.ai.ttr}%
+- Jumlah Frasa Tipikal AI              : ${data.ai.aiPhraseCount}
 
 [ DOKUMEN REFERENSI PEMBANDING ]
 ${data.plagiarism.sources.length ? data.plagiarism.sources.map(s => `- ${s.title}: ${s.score}%`).join('\n') : '- Tidak ada kemiripan signifikan'}
 
 ================================================
-CheckText AI - Automated Client-Side Verification
+Alibnymn Checker - Client-Side Verification
 ================================================`;
         }
     </script>
